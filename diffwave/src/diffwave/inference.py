@@ -25,15 +25,17 @@ from argparse import ArgumentParser
 from params import AttrDict, params as base_params
 from model import DiffWave
 
+import pywt
+
 models = {}
 
 def predict(spectrogram=None, model_dir=None, params=None, device=torch.device('cuda'), fast_sampling=False):
   # Lazy load model.
   if not model_dir in models:
-    # if os.path.exists(f'{model_dir}/weights.pt'):
-    #   checkpoint = torch.load(f'{model_dir}/weights.pt')
-    if os.path.exists(f'{model_dir}/diffwave-ljspeech-22kHz-1000578.pt'):
-      checkpoint = torch.load(f'{model_dir}/diffwave-ljspeech-22kHz-1000578.pt')
+    if os.path.exists(f'{model_dir}/weights.pt'):
+      checkpoint = torch.load(f'{model_dir}/weights.pt')
+    # if os.path.exists(f'{model_dir}/diffwave-ljspeech-22kHz-1000578.pt'):
+    #   checkpoint = torch.load(f'{model_dir}/diffwave-ljspeech-22kHz-1000578.pt')
     else:
       checkpoint = torch.load(model_dir)
     model = DiffWave(AttrDict(base_params)).to(device)
@@ -75,11 +77,13 @@ def predict(spectrogram=None, model_dir=None, params=None, device=torch.device('
       if len(spectrogram.shape) == 2:# Expand rank 2 tensors by adding a batch dimension.
         spectrogram = spectrogram.unsqueeze(0)
       spectrogram = spectrogram.to(device)
-      audio = torch.randn(spectrogram.shape[0], model.params.hop_samples * spectrogram.shape[-1], device=device)
+      # audio = torch.randn(spectrogram.shape[0], model.params.hop_samples * spectrogram.shape[-1], device=device)
+      audio = torch.randn(spectrogram.shape[0], model.params.hop_samples * spectrogram.shape[-1]//2, device=device)
+      audio = audio.unsqueeze(1)
+      audio = torch.cat([audio, audio], dim=1)
     else:
       audio = torch.randn(1, params.audio_len, device=device)
     noise_scale = torch.from_numpy(alpha_cum**0.5).float().unsqueeze(1).to(device)
-
     for n in range(len(alpha) - 1, -1, -1):
       c1 = 1 / alpha[n]**0.5
       c2 = beta[n] / (1 - alpha_cum[n])**0.5
@@ -98,7 +102,14 @@ def main(args):
   else:
     spectrogram = None
   audio, sr = predict(spectrogram, model_dir=args.model_dir, fast_sampling=args.fast, params=base_params)
-  torchaudio.save(args.output, audio.cpu(), sample_rate=sr)
+  # discrete inverse wavelet transform (IWT)
+  cA = audio[:, 0:1, :].squeeze(1)
+  cD = audio[:, 1:2, :].squeeze(1)
+  predicted_iwt = torch.from_numpy(pywt.idwt(cA.cpu().numpy(), cD.cpu().numpy(), 'haar', mode='zero'))
+  torchaudio.save(args.output, predicted_iwt.cpu(), sample_rate=sr)
+  
+  # print(audio.size())
+  # torchaudio.save(args.output, audio.cpu(), sample_rate=sr)
 
 
 if __name__ == '__main__':
