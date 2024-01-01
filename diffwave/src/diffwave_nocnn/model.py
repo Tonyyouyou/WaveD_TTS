@@ -129,26 +129,6 @@ class ResidualBlock(nn.Module):
     residual, skip = torch.chunk(y, 2, dim=1)
     return (x + residual) / sqrt(2.0), skip
 
-class LowFrequencyEnhancer(nn.Module):
-  def __init__(self,dilation):
-    super().__init__()
-    self.conv1 = Conv1d(1, 16, kernel_size=3, padding=dilation, dilation=dilation)
-    self.conv2 = Conv1d(16, 32, kernel_size=3, padding=dilation, dilation=dilation)
-
-    self.shortcut = nn.Sequential(
-        nn.Conv1d(1, 32, kernel_size=1)
-    )
-
-  def forward(self,x):
-    residual = x
-    low_frequency = x[:,0,:].unsqueeze(1)
-    high_frequency = x[:,1,:].unsqueeze(1)
-    high_frequency = self.conv1(high_frequency)
-    high_frequency = self.conv2(high_frequency)
-    
-    # Shortcut 连接
-    out = torch.cat([self.shortcut(low_frequency), high_frequency],dim=1)
-    return out
 
 class DiffWave(nn.Module):
   def __init__(self, params):
@@ -158,7 +138,6 @@ class DiffWave(nn.Module):
     self.input_projection = Conv1d(2, params.residual_channels, 1)
 
     # low frequency enhancer
-    self.low_frequency_enhancer = LowFrequencyEnhancer(2**params.dilation_cycle_length)
 
     self.diffusion_embedding = DiffusionEmbedding(len(params.noise_schedule))
     if self.params.unconditional: # use unconditional model
@@ -181,8 +160,8 @@ class DiffWave(nn.Module):
 
     # x = audio.unsqueeze(1)
     x = audio
-    x = self.low_frequency_enhancer(x)
-    # x = self.input_projection(x)
+    # x = self.low_frequency_enhancer(x)
+    x = self.input_projection(x)
     x = F.relu(x)
 
     diffusion_step = self.diffusion_embedding(diffusion_step)
