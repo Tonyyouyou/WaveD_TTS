@@ -71,6 +71,14 @@ class UnconditionalDataset(torch.utils.data.Dataset):
 class Collator:
   def __init__(self, params):
     self.params = params
+    if self.params.waveletbase == 'cdf53':
+      dec_lo = np.array([0,-1/8,2/8,6/8,2/8,-1/8])  # 低通滤波器系数
+      dec_hi = np.array([0,-1/2, 1, -1/2, 0, 0])  # 高通滤波器系数
+      rec_lo = np.array([0, 1/2, 1, 1/2, 0, 0])
+      rec_hi = np.array([0, -1/8, -2/8, 6/8, -2/8,-1/8])
+      self.dwt = pywt.Wavelet(name='cdf53',filter_bank=(dec_lo, dec_hi, rec_lo, rec_hi))
+    else:
+      self.dwt = pywt.Wavelet(self.params.waveletbase)
 
   def collate(self, minibatch):
     samples_per_frame = self.params.hop_samples
@@ -103,8 +111,8 @@ class Collator:
           record['audio'] = np.pad(record['audio'], (0, (end-start) - len(record['audio'])), mode='constant')
 
           # discrete wavelet transform (DWT)
-          dwt = pywt.Wavelet(self.params.waveletbase)
-          cA,cD = pywt.dwt(record['audio'], dwt, mode='zero')
+          # dwt = pywt.Wavelet(self.params.waveletbase)
+          cA,cD = pywt.dwt(record['audio'], self.dwt, mode='zero')
           record['audio'] = np.vstack((cA,cD))
 
     audio = np.stack([record['audio'] for record in minibatch if 'audio' in record])

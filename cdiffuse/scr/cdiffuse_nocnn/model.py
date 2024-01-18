@@ -70,14 +70,25 @@ class DiffusionEmbedding(nn.Module):
 
 
 class SpectrogramUpsampler(nn.Module):
-  def __init__(self, n_mels):
+  def __init__(self, n_mels,waveletbase):
     super().__init__()
     self.conv1 = ConvTranspose2d(1, 1, [3, 32], stride=[1, 16], padding=[1, 8])
 
     # 对于 haar,db1,bior1.1
-    # self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 4])
-    # 对于 coif1
-    self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 3])
+    wavegroup1 = ['haar','db1','bior1.1']
+    if waveletbase in wavegroup1:
+      self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 4])
+      
+    # 对于 coif1 cdf53
+    wavegroup2 = ['coif1','cdf53']
+    if waveletbase in wavegroup2:
+      self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 3])
+    
+    if waveletbase == 'db2':
+      self.conv2 = ConvTranspose2d(1, 1,  [3, 15], stride=[1, 8], padding=[1, 3])
+      
+    if waveletbase == 'db4':
+      self.conv2 = ConvTranspose2d(1, 1,  [3, 17], stride=[1, 8], padding=[1, 3])
 
   def forward(self, x):
     x = torch.unsqueeze(x, 1)
@@ -148,7 +159,7 @@ class DiffuSE(nn.Module):
     # self.low_frequency_enhancer = LowFrequencyEnhancer(2**params.dilation_cycle_length)
     
     self.diffusion_embedding = DiffusionEmbedding(len(params.noise_schedule))
-    self.spectrogram_upsampler = SpectrogramUpsampler(params.n_mels)
+    self.spectrogram_upsampler = SpectrogramUpsampler(params.n_mels, params.waveletbase)
     self.residual_layers = nn.ModuleList([
         ResidualBlock(params.n_mels, params.residual_channels, 2**(i % params.dilation_cycle_length))
         for i in range(params.residual_layers)

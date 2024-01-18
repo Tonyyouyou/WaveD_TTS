@@ -47,15 +47,20 @@ params = AttrDict(
 
     # Model params
     residual_layers=30,
-    residual_channels=64,
     dilation_cycle_length=10,
     unconditional = False,
-    # noise_schedule=np.linspace(1e-4, 0.05, 50).tolist(),
-    noise_schedule=np.linspace(1e-4, 0.02, 200).tolist(),
     inference_noise_schedule=[0.0001, 0.001, 0.01, 0.05, 0.2, 0.5],
+    
+    #large
+    residual_channels=128,
+    noise_schedule=np.linspace(1e-4, 0.02, 200).tolist(),
+
+    # #base
+    # residual_channels=64,
+    # noise_schedule=np.linspace(1e-4, 0.05, 50).tolist(),
 
     # unconditional sample len
     audio_len = 22050*5, # unconditional_synthesis_samples
 
-    waveletbase = 'coif1'
+    waveletbase = None
 )

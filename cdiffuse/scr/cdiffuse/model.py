@@ -70,14 +70,26 @@ class DiffusionEmbedding(nn.Module):
 
 
 class SpectrogramUpsampler(nn.Module):
-  def __init__(self, n_mels):
+  def __init__(self, n_mels, waveletbase):
     super().__init__()
     self.conv1 = ConvTranspose2d(1, 1, [3, 32], stride=[1, 16], padding=[1, 8])
 
     # 对于 haar,db1,bior1.1
-    # self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 4])
-    # 对于 coif1
-    self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 3])
+    wavegroup1 = ['haar','db1','bior1.1']
+    if waveletbase in wavegroup1:
+      self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 4])
+      
+    # 对于 coif1 cdf53
+    wavegroup2 = ['coif1','cdf53']
+    if waveletbase in wavegroup2:
+      self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 3])
+    
+
+    if waveletbase == 'db2':
+      self.conv2 = ConvTranspose2d(1, 1,  [3, 15], stride=[1, 8], padding=[1, 3])
+      
+    if waveletbase == 'db4':
+      self.conv2 = ConvTranspose2d(1, 1,  [3, 17], stride=[1, 8], padding=[1, 3])
 
   def forward(self, x):
     x = torch.unsqueeze(x, 1)
@@ -117,13 +129,13 @@ class ResidualBlock(nn.Module):
     return (x + residual) / sqrt(2.0), skip
 
 class LowFrequencyEnhancer(nn.Module):
-  def __init__(self,dilation):
+  def __init__(self,residual_channels,dilation):
     super().__init__()
-    self.conv1 = Conv1d(1, 16, kernel_size=3, padding=dilation, dilation=dilation)
-    self.conv2 = Conv1d(16, 32, kernel_size=3, padding=dilation, dilation=dilation)
+    self.conv1 = Conv1d(1, residual_channels//4, kernel_size=3, padding=dilation, dilation=dilation)
+    self.conv2 = Conv1d(residual_channels//4, residual_channels//2, kernel_size=3, padding=dilation, dilation=dilation)
 
     self.shortcut = nn.Sequential(
-        nn.Conv1d(1, 32, kernel_size=1)
+        nn.Conv1d(1, residual_channels//2, kernel_size=1)
     )
 
   def forward(self,x):
@@ -132,7 +144,6 @@ class LowFrequencyEnhancer(nn.Module):
     high_frequency = x[:,1,:].unsqueeze(1)
     high_frequency = self.conv1(high_frequency)
     high_frequency = self.conv2(high_frequency)
-    
     # Shortcut 连接
     out = torch.cat([self.shortcut(low_frequency), high_frequency],dim=1)
     return out
@@ -142,13 +153,13 @@ class DiffuSE(nn.Module):
     super().__init__()
     self.params = params
     #self.input_projection = Conv1d(1, params.residual_channels, 1)
-    # self.input_projection = Conv1d(2, params.residual_channels, 1)
-
+    #self.input_projection = Conv1d(2, params.residual_channels, 1)
+ 
     # low frequency enhancer
-    self.low_frequency_enhancer = LowFrequencyEnhancer(2**params.dilation_cycle_length)
-    
+    self.low_frequency_enhancer = LowFrequencyEnhancer(params.residual_channels ,2**params.dilation_cycle_length)
+  
     self.diffusion_embedding = DiffusionEmbedding(len(params.noise_schedule))
-    self.spectrogram_upsampler = SpectrogramUpsampler(params.n_mels)
+    self.spectrogram_upsampler = SpectrogramUpsampler(params.n_mels, params.waveletbase)
     self.residual_layers = nn.ModuleList([
         ResidualBlock(params.n_mels, params.residual_channels, 2**(i % params.dilation_cycle_length))
         for i in range(params.residual_layers)
@@ -178,3 +189,4 @@ class DiffuSE(nn.Module):
     x = F.relu(x)
     x = self.output_projection(x)
     return x
+

@@ -30,6 +30,9 @@ def _get_free_port():
 
 def main(args):
   replica_count = device_count()
+  params.waveletbase = args.waveletbase
+  print('count')
+  print('count', params.waveletbase)
   if replica_count > 1:
     if params.batch_size % replica_count != 0:
       raise ValueError(f'Batch size {params.batch_size} is not evenly divisble by # GPUs {replica_count}.')
@@ -45,6 +48,8 @@ if __name__ == '__main__':
       help='directory in which to store model checkpoints and training logs')
   parser.add_argument('data_dirs', nargs='+',
       help='space separated list of directories from which to read .wav files for training')
+  parser.add_argument('--waveletbase', type=str, default='default_value',
+                    help='description for waveletbase argument')
   parser.add_argument('--max_steps', default=None, type=int,
       help='maximum number of training steps')
   parser.add_argument('--fp16', action='store_true', default=False,
