@@ -82,7 +82,7 @@ class SpectrogramUpsampler(nn.Module):
       self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 4])
       
     # 对于 coif1 cdf53
-    wavegroup2 = ['coif1','cdf53']
+    wavegroup2 = ['coif1','cdf53','bior1.3']
     if waveletbase in wavegroup2:
       self.conv2 = ConvTranspose2d(1, 1,  [3, 16], stride=[1, 8], padding=[1, 3])
     
