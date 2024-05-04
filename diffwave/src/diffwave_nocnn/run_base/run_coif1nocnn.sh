@@ -3,9 +3,9 @@
 #PBS -l mem=90GB
 #PBS -l jobfs=200GB
 #PBS -q gpuvolta
-#PBS -P po67
-#PBS -l walltime=12:00:00
-#PBS -l storage=gdata/wa66+scratch/wa66
+#PBS -P iv96
+#PBS -l walltime=48:00:00
+#PBS -l storage=gdata/wa66+gdata/po67+gdata/ey69
 #PBS -l wd
 export HF_HOME="/g/data/wa66/Xiangyu/cache/huggingface"
 module load python3/3.9.2
@@ -13,8 +13,8 @@ module load openmpi/4.0.2
 module load hdf5/1.10.5
 source /home/561/xz4320/enviroment/pytorch_3.9.2/bin/activate
 
-model_dir='/g/data/wa66/Xiangyu/Result/wavTTS/base/coif1nocnn'
-data_dirs='/g/data/wa66/Xiangyu/Data/LJSpeech-1.1/wavs'
+model_dir='/g/data/wa66/Xiangyu/Result/waveletTTS_VCTK/base/nocnncoif1'
+data_dirs='/g/data/ey69/xiangyu_ey69/data/DS_10283_2651/wav48'
 max_steps=1000000
 waveletbase='coif1'
 

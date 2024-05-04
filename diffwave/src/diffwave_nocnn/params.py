@@ -39,7 +39,7 @@ params = AttrDict(
     max_grad_norm=None,
 
     # Data params
-    sample_rate=22050,
+    sample_rate=48000,
     n_mels=80,
     n_fft=1024,
     hop_samples=256,
@@ -60,7 +60,7 @@ params = AttrDict(
     noise_schedule=np.linspace(1e-4, 0.05, 50).tolist(),
 
     # unconditional sample len
-    audio_len = 22050*5, # unconditional_synthesis_samples
+    audio_len = 48000*5, # unconditional_synthesis_samples
 
     waveletbase = None
 )

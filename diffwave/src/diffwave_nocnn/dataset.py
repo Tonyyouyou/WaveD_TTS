@@ -19,6 +19,7 @@ import random
 import torch
 import torch.nn.functional as F
 import torchaudio
+import pdb
 
 from glob import glob
 from torch.utils.data.distributed import DistributedSampler
@@ -32,6 +33,8 @@ class ConditionalDataset(torch.utils.data.Dataset):
     self.filenames = []
     for path in paths:
       self.filenames += glob(f'{path}/**/*.wav', recursive=True)
+    # pdb.set_trace()
+    
 
   def __len__(self):
     return len(self.filenames)
