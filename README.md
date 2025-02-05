@@ -2,10 +2,6 @@
 
 This repository contains the official implementation of the paper [Speaking in Wavelet Domain: A Simple and Efficient Approach to Speed up Speech Diffusion Model](https://aclanthology.org/2024.emnlp-main.9).
 
-## Overview
-For ASR task, we provided espnet related files and Pytorch Version of ConBiMamba. 
-
-For Speech Enhancement task, the pipeline is done by Pytorch
 
 
 ## Citation
